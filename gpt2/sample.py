@@ -12,15 +12,8 @@ itos = {i: ch for ch, i in stoi.items()}
 vocab_size = len(stoi)
 def encode(s): return [stoi[c] for c in s]
 def decode(l): return ''.join([itos[i] for i in l])
-data = torch.tensor(encode(text), dtype=torch.long)
-# 构造 batch
-def get_batch():
-    ix = torch.randint(0, len(data) - T - 1, (B,))
-    x = torch.stack([data[i:i+T] for i in ix])
-    y = torch.stack([data[i+1:i+T+1] for i in ix])
-    return x.to(device), y.to(device)
 
-model = GPT2(vocab_size, T, n_embed, n_head, 4).to(device)
+model = GPT2(vocab_size, block_size, n_embed, n_head, 4).to(device)
 # 编译模型
 model = torch.compile(model)  # Ensure the model is compiled for performance
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)

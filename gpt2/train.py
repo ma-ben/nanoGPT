@@ -1,5 +1,5 @@
 import torch
-from GPT_2 import GPT2
+from model import GPT2
 import os
 from config import *
 import threading
@@ -44,13 +44,13 @@ if __name__ == "__main__":
     data = torch.tensor(encode(text), dtype=torch.long)
     # 构造 batch
     def get_batch():
-        ix = torch.randint(0, len(data) - T - 1, (B,))
-        x = torch.stack([data[i:i+T] for i in ix])
-        y = torch.stack([data[i+1:i+T+1] for i in ix])
+        ix = torch.randint(0, len(data) - block_size - 1, (batch_size,))
+        x = torch.stack([data[i:i+block_size] for i in ix])
+        y = torch.stack([data[i+1:i+block_size+1] for i in ix])
         return x.to(device), y.to(device)
 
     # 初始化模型和优化器
-    model = GPT2(vocab_size, T, n_embed, n_head, 4).to(device)
+    model = GPT2(vocab_size, block_size, n_embed, n_head, 4).to(device)
     # 编译模型
     model = torch.compile(model)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     model.train()
     from torch.nn import functional as F
     import time
-    for step in range(start_step, total_step):
+    for step in range(start_step, total_steps):
         t0 = time.time()
         x, y = get_batch()
         logits = model(x)
