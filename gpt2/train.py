@@ -4,19 +4,17 @@ import os
 from config import *
 import threading
 
-torch.set_float32_matmul_precision('high')
-
-def async_save_checkpoint(model, optimizer, step, path="GPT2.pth"):
+def async_save_checkpoint(model, optimizer, step, path=MODEL_FILE):
     def _save():
         torch.save({
-            'model': model.state_dict(),
+            'model': model._orig_mod.state_dict(),
             'optimizer': optimizer.state_dict(),
             'step': step,
         }, path)
     thread = threading.Thread(target=_save)
     thread.start()
 
-def load_checkpoint(model, optimizer, path="GPT2.pth"):
+def load_checkpoint(model, optimizer, path=MODEL_FILE):
     checkpoint = torch.load(path)
     model.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
@@ -51,29 +49,22 @@ if __name__ == "__main__":
 
     # 初始化模型和优化器
     model = GPT2(vocab_size, block_size, n_embed, n_head, 4).to(device)
-    # 编译模型
-    model = torch.compile(model)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     # 训练和继续训练
-    resume = os.path.exists(model_name)
+    resume = os.path.exists(MODEL_FILE)
     start_step = 0
     if resume:
-        start_step = load_checkpoint(model, optimizer, model_name)
+        start_step = load_checkpoint(model, optimizer, MODEL_FILE)
         print(f"✅ Resumed training from step {start_step}")
     else:
         print("🚀 Starting fresh training")
-
-    # 训练前采样
-    print("Sample from the model before training:")
-    model.eval()
-    context = torch.tensor([[stoi["h"]]], device=device)
-    with torch.no_grad():
-        ans = model.generater(context)
-    print(decode(ans))
+    
     # 训练循环
-    model.train()
     from torch.nn import functional as F
     import time
+    import json
+    model = torch.compile(model)
+    model.train()
     for step in range(start_step, total_steps):
         t0 = time.time()
         x, y = get_batch()
@@ -83,17 +74,11 @@ if __name__ == "__main__":
         loss.backward()
         optimizer.step()
 
-        if step % 50 == 0:
+        if step % 10 == 0:
             print(f"Step {step} | loss: {loss.item():.4f}")
         if step % 500 == 0:
             async_save_checkpoint(model, optimizer, step)
-    # 训练后采样
-    print("Sample from the model after training:",)
-    context = torch.tensor([[stoi["h"]]], device=device)
-    model.eval()
-    with torch.no_grad():
-        ans = model.generater(context)
-    print(decode(ans))
+            
     # 训练完成后，打印模型参数
     count = 0
     for param in model.parameters():

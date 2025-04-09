@@ -2,6 +2,7 @@
 *.pth
 # 排除python垃圾
 __pycache__/
+wandb/
 *.py[cod]
 
 

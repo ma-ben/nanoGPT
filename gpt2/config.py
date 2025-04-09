@@ -7,5 +7,7 @@ n_layer = 12
 vocab_size = 65
 lr = 1e-3
 total_steps = 30000
-model_name = "gpt2.pth"
+
+
+MODEL_FILE = "gpt2.pth"
 
