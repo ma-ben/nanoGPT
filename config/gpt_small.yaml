@@ -1,0 +1,22 @@
+
+model_name: "gpt_small"
+tokenizer: "tokenizer/gpt_tokenizer"
+
+model:
+  block_size: 512   # context window
+  embed_dim: 512
+  num_heads: 8
+  num_layers: 8
+  vocab_size: 8192
+
+train:
+  batch_size: 8  # batch size
+  lr: 3e-4
+  total_steps: 20000
+  save_steps: 1000
+
+
+
+ckpt_dir: "gpt_small_ckpt"
+log_file: "${ckpt_dir}/log.txt"
+
